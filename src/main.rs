@@ -130,10 +130,9 @@ fn main() -> Result<()> {
     // Simulate different soil conditions over time
     let conditions = ["dry", "optimal", "wet", "optimal"];
     let mut condition_index = 0;
-    let mut readings_count = 0;
 
     // Main sensor reading loop (limited for demonstration)
-    for _ in 0..20 {
+    for (readings_count, _) in (0..20).enumerate() {
         // Change conditions every 5 readings
         if readings_count % 5 == 0 {
             let condition = conditions[condition_index % conditions.len()];
@@ -171,8 +170,6 @@ fn main() -> Result<()> {
             }
         }
 
-        readings_count += 1;
-
         // Wait before next reading
         std::thread::sleep(Duration::from_millis(READING_INTERVAL_MS));
     }
@@ -185,9 +182,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+// Unit tests are host-only; they are not built for the Xtensa target used in CI clippy.
+#[cfg(all(test, not(target_arch = "xtensa")))]
 mod tests {
-    use super::*;
+    use super::{
+        get_soil_condition, raw_to_moisture_percent, DRY_SOIL, MOISTURE_HIGH, MOISTURE_LOW,
+        WET_SOIL,
+    };
 
     #[test]
     fn maps_raw_values_to_expected_percentages() {

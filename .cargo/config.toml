@@ -15,3 +15,9 @@ build-std = ["std", "panic_abort"]
 MCU = "esp32"
 ESP_IDF_VERSION = "v5.3.3"
 
+
+# In .cargo/config.toml
+[alias]
+xbuild = "build --release --target xtensa-esp32-espidf"
+xflash = "espflash flash --release --monitor"
+xcheck = "clippy --workspace --all-targets --all-features --target xtensa-esp32-espidf -- -D warnings"
