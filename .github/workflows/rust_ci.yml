@@ -18,31 +18,48 @@ jobs:
   rust-checks:
     name: Rust Checks
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
-        action:
-          - command: build
-            args: --release
-          - command: fmt
-            args: --all -- --check --color always
-          - command: clippy
-            args: --all-targets --all-features --workspace -- -D warnings
+        action: [build, fmt, clippy]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup Rust
         uses: esp-rs/xtensa-toolchain@v1.6
         with:
           default: true
           buildtargets: esp32
           ldproxy: true
+
       - name: Enable caching
         uses: Swatinem/rust-cache@v2
-      - name: Run command
-        run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
+
+      - name: Run cargo ${{ matrix.action }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ matrix.action }}" in
+            build)
+              cargo build --release --target "$CARGO_BUILD_TARGET"
+              ;;
+            fmt)
+              cargo fmt --all -- --check --color always
+              ;;
+            clippy)
+              cargo clippy --all-targets --all-features --target "$CARGO_BUILD_TARGET" -- -D warnings
+              ;;
+            *)
+              echo "Unknown action: ${{ matrix.action }}" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Upload firmware artifacts
-        if: matrix.action.command == 'build'
+        if: matrix.action == 'build'
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ github.sha }}
