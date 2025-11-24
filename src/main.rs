@@ -184,3 +184,32 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maps_raw_values_to_expected_percentages() {
+        assert_eq!(raw_to_moisture_percent(DRY_SOIL + 50), 0);
+        assert_eq!(raw_to_moisture_percent(WET_SOIL.saturating_sub(50)), 100);
+        // Midpoint between DRY_SOIL and WET_SOIL should be ~50%
+        let mid = WET_SOIL + ((DRY_SOIL - WET_SOIL) / 2);
+        assert_eq!(raw_to_moisture_percent(mid), 50);
+    }
+
+    #[test]
+    fn soil_condition_matches_thresholds() {
+        let (label, led) = get_soil_condition(MOISTURE_LOW.saturating_sub(1));
+        assert_eq!(label, "DRY - Need Water!");
+        assert!(led);
+
+        let (label, led) = get_soil_condition(MOISTURE_HIGH.saturating_add(1));
+        assert_eq!(label, "WET - Too Much Water!");
+        assert!(!led);
+
+        let (label, led) = get_soil_condition((MOISTURE_LOW + MOISTURE_HIGH) / 2);
+        assert_eq!(label, "OPTIMAL");
+        assert!(!led);
+    }
+}
